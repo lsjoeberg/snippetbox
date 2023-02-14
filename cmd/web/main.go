@@ -7,6 +7,11 @@ import (
 	"os"
 )
 
+type application struct {
+	infoLog  *log.Logger
+	errorLog *log.Logger
+}
+
 func main() {
 	// App configuration via command-line.
 	addr := flag.String("addr", ":4000", "HTTP network address")
@@ -16,6 +21,12 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
+	// Create app with dependencies.
+	app := &application{
+		infoLog:  infoLog,
+		errorLog: errorLog,
+	}
+
 	// Create router.
 	mux := http.NewServeMux()
 
@@ -24,9 +35,9 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
 	// Create handlers.
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
+	mux.HandleFunc("/", app.home)
+	mux.HandleFunc("/snippet/view", app.snippetView)
+	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
 	// Create a server and inject custom loggers.
 	srv := &http.Server{
