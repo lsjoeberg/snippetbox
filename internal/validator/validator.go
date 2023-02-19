@@ -1,9 +1,14 @@
 package validator
 
 import (
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
+
+// EmailRX is a regular expression for matching val e-mail addresses as per W3C recommendations.
+// See https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address.
+var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 // Validator represents validation errors for form fields.
 type Validator struct {
@@ -53,4 +58,15 @@ func PermittedInt(value int, permittedValues ...int) bool {
 		}
 	}
 	return false
+}
+
+// MinChars returns true if a value contains at least n characters.
+func MinChars(value string, n int) bool {
+	return utf8.RuneCountInString(value) >= n
+}
+
+// Matches returns true if a value matches a provided compiled regular
+// expression pattern.
+func Matches(value string, rx *regexp.Regexp) bool {
+	return rx.MatchString(value)
 }
