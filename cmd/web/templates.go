@@ -2,12 +2,14 @@ package main
 
 import (
 	"html/template"
+	"io/fs"
 	"net/http"
 	"path/filepath"
 	"time"
 
 	"github.com/justinas/nosurf"
 	"github.com/lsjoeberg/snippetbox/internal/models"
+	"github.com/lsjoeberg/snippetbox/ui"
 )
 
 // templateData acts as a holding structure for any dynamic data that
@@ -40,29 +42,22 @@ var functions = template.FuncMap{
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
-	pages, err := filepath.Glob("./ui/html/pages/*.tmpl")
+	pages, err := fs.Glob(ui.Files, "html/pages/*.tmpl")
 	if err != nil {
 		return nil, err
 	}
-	cache := make(map[string]*template.Template, len(pages))
 
+	cache := make(map[string]*template.Template, len(pages))
 	for _, page := range pages {
 		name := filepath.Base(page)
 
-		// Parse the base template into a template set.
-		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl")
-		if err != nil {
-			return nil, err
+		patterns := []string{
+			"html/base.tmpl",
+			"html/partials/*.tmpl",
+			page,
 		}
 
-		// Parse partials templates.
-		ts, err = ts.ParseGlob("./ui/html/partials/*.tmpl")
-		if err != nil {
-			return nil, err
-		}
-
-		// Parse page template.
-		ts, err = ts.ParseFiles(page)
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
 		if err != nil {
 			return nil, err
 		}
